@@ -21,14 +21,15 @@ class HistorialController extends GetxController {
     isLoading.value = true;
 
     try {
-      final contacto = storage.read('contacto') ?? '';
+      final userData = storage.read('userData');
+      final dni = userData != null ? userData['dni'] ?? '' : '';
 
-      if (contacto.isEmpty) {
+      if (dni.isEmpty) {
         isLoading.value = false;
         return;
       }
 
-      final movimientosData = await apiService.obtenerMovimientos(contacto);
+      final movimientosData = await apiService.obtenerMovimientos(dni);
       movimientos.value = movimientosData;
     } catch (e) {
       print('Error al cargar movimientos: $e');
@@ -38,15 +39,16 @@ class HistorialController extends GetxController {
   }
 
   List<Movimiento> get movimientosFiltrados {
-    final contacto = storage.read('contacto') ?? '';
+    final userData = storage.read('userData');
+    final dni = userData != null ? userData['dni'] ?? '' : '';
 
     if (filtroSeleccionado.value == 'Todos') {
       return movimientos;
     } else if (filtroSeleccionado.value == 'Recibidos') {
-      return movimientos.where((m) => m.dniDestino == contacto).toList();
+      return movimientos.where((m) => m.dniDestino == dni).toList();
     } else {
       // Enviados
-      return movimientos.where((m) => m.dniOrigen == contacto).toList();
+      return movimientos.where((m) => m.dniOrigen == dni).toList();
     }
   }
 
@@ -56,7 +58,8 @@ class HistorialController extends GetxController {
 
   // Determinar si un movimiento es recibido o enviado
   bool esMovimientoRecibido(Movimiento movimiento) {
-    final contacto = storage.read('contacto') ?? '';
-    return movimiento.dniDestino == contacto;
+    final userData = storage.read('userData');
+    final dni = userData != null ? userData['dni'] ?? '' : '';
+    return movimiento.dniDestino == dni;
   }
 }

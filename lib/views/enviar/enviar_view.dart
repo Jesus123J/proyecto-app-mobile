@@ -3,12 +3,12 @@ import 'package:get/get.dart';
 import '../../controllers/enviar_controller.dart';
 
 class EnviarView extends StatelessWidget {
-  final String numeroOrigen;
+  final String dniOrigen;
   final String nombreUsuario;
 
   const EnviarView({
     super.key,
-    required this.numeroOrigen,
+    required this.dniOrigen,
     required this.nombreUsuario,
   });
 
@@ -189,13 +189,13 @@ class EnviarView extends StatelessWidget {
                 controller: controller.pinController,
                 decoration: const InputDecoration(
                   labelText: 'PIN',
-                  hintText: 'Ingresa tu PIN',
+                  hintText: 'Ingresa tu PIN (10 dígitos)',
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.lock),
                 ),
                 obscureText: true,
                 keyboardType: TextInputType.number,
-                maxLength: 4,
+                maxLength: 10,
               ),
               const SizedBox(height: 24),
               SizedBox(
@@ -205,7 +205,7 @@ class EnviarView extends StatelessWidget {
                   onPressed: controller.isTransferring.value
                       ? null
                       : () {
-                          controller.realizarTransferencia(numeroOrigen);
+                          controller.realizarTransferencia(dniOrigen);
                         },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.primary,

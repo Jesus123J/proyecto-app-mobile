@@ -56,6 +56,7 @@ class LoginView extends GetView<LoginController> {
                     obscureText: controller.obscurePassword.value,
                     decoration: InputDecoration(
                       labelText: 'PIN',
+                      hintText: '10 dígitos',
                       prefixIcon: const Icon(Icons.lock),
                       suffixIcon: IconButton(
                         icon: Icon(
@@ -70,6 +71,7 @@ class LoginView extends GetView<LoginController> {
                       ),
                     ),
                     keyboardType: TextInputType.number,
+                    maxLength: 10,
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -95,16 +97,6 @@ class LoginView extends GetView<LoginController> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () {},
-                  child: Text(
-                    '¿Olvidaste tu PIN?',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
                 ),

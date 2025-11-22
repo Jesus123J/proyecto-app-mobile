@@ -58,16 +58,36 @@ class DashboardView extends GetView<DashboardController> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'Saldo disponible',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Saldo disponible',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            controller.saldoVisible.value
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            color: Colors.white70,
+                            size: 20,
+                          ),
+                          onPressed: controller.toggleSaldoVisibility,
+                          tooltip: controller.saldoVisible.value
+                              ? 'Ocultar saldo'
+                              : 'Mostrar saldo',
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'S/ ${controller.saldo.value.toStringAsFixed(2)}',
+                      controller.saldoVisible.value
+                          ? 'S/ ${controller.saldo.value.toStringAsFixed(2)}'
+                          : 'S/ ••••••',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 36,
@@ -88,7 +108,7 @@ class DashboardView extends GetView<DashboardController> {
                         label: 'Enviar',
                         onTap: () {
                           Get.to(() => EnviarView(
-                                numeroOrigen: controller.contacto.value,
+                                dniOrigen: controller.dni.value,
                                 nombreUsuario: controller.nombreUsuario.value,
                               ));
                         },

@@ -74,14 +74,20 @@ class EnviarController extends GetxController {
     }
   }
 
-  Future<void> realizarTransferencia(String numeroOrigen) async {
+  Future<void> realizarTransferencia(String dniOrigen) async {
     if (!_validarFormulario()) return;
+
+    print('🚀 ========== INICIANDO PROCESO DE TRANSFERENCIA ==========');
+    print('👤 DNI Origen: $dniOrigen');
+    print('📞 Número Destino: ${numeroDestinoController.text.trim()}');
+    print('💰 Monto: ${montoController.text}');
+    print('📱 App destino: ${selectedWallet.value?.appName ?? 'YaTa'}');
 
     isTransferring.value = true;
 
     try {
       final resultado = await _apiService.transferir(
-        origen: numeroOrigen,
+        origen: dniOrigen,
         destino: numeroDestinoController.text.trim(),
         monto: double.parse(montoController.text),
         mensaje: mensajeController.text.trim(),
@@ -89,7 +95,11 @@ class EnviarController extends GetxController {
         topAppName: selectedWallet.value?.appName ?? 'YaTa',
       );
 
+      print('📊 Resultado recibido: $resultado');
+
       if (resultado['success']) {
+        print('✅ Transferencia exitosa!');
+
         // Actualizar el saldo después de la transferencia exitosa
         await _actualizarSaldo(double.parse(montoController.text));
 
@@ -101,31 +111,238 @@ class EnviarController extends GetxController {
           print('Error al refrescar dashboard: $e');
         }
 
-        Get.back();
-        Get.snackbar(
-          'Éxito',
-          resultado['message'] ?? 'Transferencia realizada correctamente',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          duration: const Duration(seconds: 3),
+        // Mostrar diálogo de éxito
+        Get.dialog(
+          Builder(
+            builder: (BuildContext dialogContext) {
+              return Dialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.check_circle,
+                          color: Colors.green,
+                          size: 64,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        '¡Transferencia exitosa!',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Se envió S/ ${montoController.text} correctamente',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey[600],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(dialogContext).pop(); // Cerrar diálogo
+                            Get.back(); // Volver al dashboard
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'Aceptar',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+          barrierDismissible: false,
         );
       } else {
-        Get.snackbar(
-          'Error',
-          resultado['message'] ?? 'No se pudo realizar la transferencia',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
+        print('❌ Error en la transferencia: ${resultado['message']}');
+
+        // Mostrar diálogo de error
+        Get.dialog(
+          Builder(
+            builder: (BuildContext dialogContext) {
+              return Dialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.error,
+                          color: Colors.red,
+                          size: 64,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Error al enviar',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        resultado['message'] ?? 'No se pudo realizar la transferencia',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey[600],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(dialogContext).pop(); // Cerrar diálogo
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'Entendido',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+          barrierDismissible: false,
         );
       }
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Error al realizar la transferencia: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
+      print('❌ Excepción al realizar transferencia: $e');
+
+      // Mostrar diálogo de error por excepción
+      Get.dialog(
+        Builder(
+          builder: (BuildContext dialogContext) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.error_outline,
+                        color: Colors.red,
+                        size: 64,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Error de conexión',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'No se pudo conectar con el servidor. Por favor verifica tu conexión a internet.',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey[600],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(dialogContext).pop(); // Cerrar diálogo
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Cerrar',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+        barrierDismissible: false,
       );
     } finally {
       isTransferring.value = false;

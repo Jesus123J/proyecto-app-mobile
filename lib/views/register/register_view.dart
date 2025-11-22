@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../controllers/register_controller.dart';
+import '../../routes/app_routes.dart';
 
 class RegisterView extends GetView<RegisterController> {
   const RegisterView({super.key});
@@ -110,11 +111,11 @@ class RegisterView extends GetView<RegisterController> {
                   keyboardType: TextInputType.number,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(4),
+                    LengthLimitingTextInputFormatter(10),
                   ],
                   decoration: InputDecoration(
                     labelText: 'PIN',
-                    hintText: 'Crea tu PIN (4 dígitos)',
+                    hintText: 'Crea tu PIN (10 dígitos)',
                     prefixIcon: const Icon(Icons.lock),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -140,11 +141,11 @@ class RegisterView extends GetView<RegisterController> {
                   keyboardType: TextInputType.number,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(4),
+                    LengthLimitingTextInputFormatter(10),
                   ],
                   decoration: InputDecoration(
                     labelText: 'Confirmar PIN',
-                    hintText: 'Confirma tu PIN',
+                    hintText: 'Confirma tu PIN (10 dígitos)',
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -227,7 +228,16 @@ class RegisterView extends GetView<RegisterController> {
 
                 // Botón de volver al login
                 TextButton(
-                  onPressed: () => Get.back(),
+                  onPressed: () async {
+                    // Quitar el foco de cualquier campo de texto antes de navegar
+                    FocusScope.of(context).unfocus();
+
+                    // Esperar un momento para que se complete el unfocus
+                    await Future.delayed(const Duration(milliseconds: 150));
+
+                    // Navegar al login (GetX se encargará de limpiar el controlador)
+                    Get.offAllNamed(AppRoutes.login);
+                  },
                   child: const Text('¿Ya tienes cuenta? Inicia sesión'),
                 ),
               ],

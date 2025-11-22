@@ -34,6 +34,12 @@ class ApiService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = json.decode(response.body);
+
+        // Asegurar que el saldo se procese correctamente
+        if (data is Map<String, dynamic> && data['saldo'] != null) {
+          data['saldo'] = double.tryParse(data['saldo'].toString()) ?? 100.0;
+        }
+
         return {
           'success': true,
           'data': data,
@@ -97,8 +103,13 @@ class ApiService {
         'monto': monto,
         'mensaje': mensaje,
         'pin': pin,
-        'topAppName': topAppName,
+        'toAppName': topAppName,
       };
+
+      print('💸 ========== INICIANDO TRANSFERENCIA ==========');
+      print('📍 URL: $url');
+      print('📦 Body enviado: ${json.encode(body)}');
+      print('🔑 Headers: Content-Type: application/json, X-API-Token: sk_yata_b7c8d9e0f1g2h3i4');
 
       final response = await http.put(
         url,
@@ -109,21 +120,42 @@ class ApiService {
         body: json.encode(body),
       );
 
+      print('📊 Status Code: ${response.statusCode}');
+      print('📥 Response Body: ${response.body}');
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = json.decode(response.body);
+        print('✅ Transferencia EXITOSA');
+        print('📦 Data recibida: $data');
         return {
           'success': true,
           'data': data,
           'message': 'Transferencia exitosa',
         };
       } else {
-        final errorData = json.decode(response.body);
-        return {
-          'success': false,
-          'message': errorData['message'] ?? errorData,
-        };
+        print('❌ Error en la transferencia - Status: ${response.statusCode}');
+        try {
+          final errorData = json.decode(response.body);
+          print('📦 Error Data: $errorData');
+          print('❌ Mensaje de error: ${errorData['message'] ?? errorData}');
+          return {
+            'success': false,
+            'message': errorData['message'] ?? errorData.toString(),
+          };
+        } catch (e) {
+          print('⚠️ No se pudo parsear el error como JSON');
+          print('📄 Response body raw: ${response.body}');
+          return {
+            'success': false,
+            'message': 'Error del servidor: ${response.body}',
+          };
+        }
       }
     } catch (e) {
+      print('❌ ========== EXCEPCIÓN EN TRANSFERENCIA ==========');
+      print('🔥 Tipo de error: ${e.runtimeType}');
+      print('🔥 Error completo: $e');
+      print('🔥 Stack trace: ${StackTrace.current}');
       return {
         'success': false,
         'message': 'Error de conexión: ${e.toString()}',
@@ -148,9 +180,9 @@ class ApiService {
     }
   }
 
-  Future<List<Movimiento>> obtenerMovimientos(String numerocelular) async {
+  Future<List<Movimiento>> obtenerMovimientos(String dni) async {
     try {
-      final url = Uri.parse('$baseUrl/usuarios/movimientos/$numerocelular');
+      final url = Uri.parse('$baseUrl/usuarios/movimientos/$dni');
 
       final response = await http.get(url);
 
@@ -178,6 +210,50 @@ class ApiService {
         return null;
       }
     } catch (e) {
+      return null;
+    }
+  }
+
+  Future<double?> obtenerSaldoUsuario(String dni) async {
+    try {
+      final url = Uri.parse('$baseUrl/usuarios/dni/$dni');
+
+      print('🌐 Consultando saldo desde API: $url');
+
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print('📦 Respuesta del servidor: $data');
+
+        if (data is Map<String, dynamic> && data['saldo'] != null) {
+          // Intentar parsear el saldo de diferentes formas
+          final saldoRaw = data['saldo'];
+          double? saldo;
+
+          if (saldoRaw is num) {
+            // Si ya es un número
+            saldo = saldoRaw.toDouble();
+          } else if (saldoRaw is String) {
+            // Si es un string, intentar parsearlo
+            // Limpiar el string de símbolos de moneda y espacios
+            final saldoLimpio = saldoRaw
+                .replaceAll('S/', '')
+                .replaceAll('S/.', '')
+                .replaceAll(',', '')
+                .trim();
+            saldo = double.tryParse(saldoLimpio);
+          }
+
+          print('💰 Saldo parseado: $saldo');
+          return saldo;
+        }
+      } else {
+        print('⚠️ Error en respuesta del servidor: ${response.statusCode}');
+      }
+      return null;
+    } catch (e) {
+      print('❌ Error al obtener saldo: $e');
       return null;
     }
   }

@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:get_storage/get_storage.dart';
 import '../services/api_service.dart';
 import '../routes/app_routes.dart';
 
@@ -25,12 +26,19 @@ class RegisterController extends GetxController {
   }
 
   Future<void> registrar() async {
+    // Limpiar espacios en blanco de los campos
+    final dni = dniController.text.trim();
+    final nombre = nombreController.text.trim();
+    final contacto = contactoController.text.trim();
+    final pin = pinController.text.trim();
+    final confirmarPin = confirmarPinController.text.trim();
+
     // Validaciones
-    if (dniController.text.isEmpty ||
-        nombreController.text.isEmpty ||
-        contactoController.text.isEmpty ||
-        pinController.text.isEmpty ||
-        confirmarPinController.text.isEmpty) {
+    if (dni.isEmpty ||
+        nombre.isEmpty ||
+        contacto.isEmpty ||
+        pin.isEmpty ||
+        confirmarPin.isEmpty) {
       Get.snackbar(
         'Error',
         'Por favor completa todos los campos',
@@ -42,7 +50,7 @@ class RegisterController extends GetxController {
     }
 
     // Validar DNI (8 dígitos)
-    if (dniController.text.length != 8) {
+    if (dni.length != 8) {
       Get.snackbar(
         'Error',
         'El DNI debe tener 8 dígitos',
@@ -54,7 +62,7 @@ class RegisterController extends GetxController {
     }
 
     // Validar número de contacto (9 dígitos)
-    if (contactoController.text.length != 9) {
+    if (contacto.length != 9) {
       Get.snackbar(
         'Error',
         'El número de contacto debe tener 9 dígitos',
@@ -65,11 +73,11 @@ class RegisterController extends GetxController {
       return;
     }
 
-    // Validar PIN (4 dígitos)
-    if (pinController.text.length != 4) {
+    // Validar PIN (10 dígitos)
+    if (pin.length != 10) {
       Get.snackbar(
         'Error',
-        'El PIN debe tener 4 dígitos',
+        'El PIN debe tener 10 dígitos',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
         colorText: Colors.white,
@@ -78,7 +86,7 @@ class RegisterController extends GetxController {
     }
 
     // Validar que los PINs coincidan
-    if (pinController.text != confirmarPinController.text) {
+    if (pin != confirmarPin) {
       Get.snackbar(
         'Error',
         'Los PINs no coinciden',
@@ -92,10 +100,10 @@ class RegisterController extends GetxController {
     isLoading.value = true;
 
     final result = await apiService.registrarUsuario(
-      dni: dniController.text,
-      nombre: nombreController.text,
-      contacto: contactoController.text,
-      pin: pinController.text,
+      dni: dni,
+      nombre: nombre,
+      contacto: contacto,
+      pin: pin,
     );
 
     isLoading.value = false;
@@ -107,12 +115,22 @@ class RegisterController extends GetxController {
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.green,
         colorText: Colors.white,
-        duration: const Duration(seconds: 4),
+        duration: const Duration(seconds: 2),
       );
 
-      // Esperar 2 segundos y regresar al login
-      await Future.delayed(const Duration(seconds: 2));
-      Get.offAllNamed(AppRoutes.login);
+      // Guardar datos del usuario en el storage para navegación automática
+      final storage = GetStorage();
+      await storage.write('userData', {
+        'nombre': nombre,
+        'contacto': contacto,
+        'dni': dni,
+        'saldo': 100.0,
+        'pin': pin,
+      });
+
+      // Esperar 1 segundo y navegar al dashboard directamente
+      await Future.delayed(const Duration(seconds: 1));
+      Get.offAllNamed(AppRoutes.dashboard);
     } else {
       Get.snackbar(
         'Error',

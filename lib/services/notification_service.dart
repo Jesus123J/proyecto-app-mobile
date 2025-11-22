@@ -16,6 +16,7 @@ class NotificationService {
   Timer? _pollingTimer;
   String? _lastMovementId;
   bool _isInitialized = false;
+  Function()? _onNuevoMovimiento;
 
   // Inicializar el servicio de notificaciones
   Future<void> initialize() async {
@@ -48,7 +49,10 @@ class NotificationService {
   }
 
   // Iniciar el monitoreo de transferencias
-  Future<void> startMonitoring(String numerocelular) async {
+  Future<void> startMonitoring(
+    String dni, {
+    Function()? onNuevoMovimiento,
+  }) async {
     if (!_isInitialized) {
       await initialize();
     }
@@ -56,15 +60,18 @@ class NotificationService {
     // Detener monitoreo previo si existe
     stopMonitoring();
 
+    // Guardar el callback
+    _onNuevoMovimiento = onNuevoMovimiento;
+
     // Obtener el último movimiento conocido
-    final movimientos = await _apiService.obtenerMovimientos(numerocelular);
+    final movimientos = await _apiService.obtenerMovimientos(dni);
     if (movimientos.isNotEmpty) {
       _lastMovementId = movimientos.first.id;
     }
 
     // Iniciar el timer que consulta cada 5 segundos
     _pollingTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
-      await _checkForNewTransfers(numerocelular);
+      await _checkForNewTransfers(dni);
     });
 
     print('Monitoreo de transferencias iniciado');
@@ -75,37 +82,55 @@ class NotificationService {
     _pollingTimer?.cancel();
     _pollingTimer = null;
     _lastMovementId = null;
+    _onNuevoMovimiento = null;
     print('Monitoreo de transferencias detenido');
   }
 
   // Verificar si hay nuevas transferencias
-  Future<void> _checkForNewTransfers(String numerocelular) async {
+  Future<void> _checkForNewTransfers(String dni) async {
     try {
-      final movimientos = await _apiService.obtenerMovimientos(numerocelular);
+      final movimientos = await _apiService.obtenerMovimientos(dni);
 
       if (movimientos.isEmpty) return;
 
       // Obtener el movimiento más reciente
       final latestMovement = movimientos.first;
 
-      // Si es un nuevo movimiento y el usuario es el destinatario
+      // Si es un nuevo movimiento
       if (_lastMovementId != null && latestMovement.id != _lastMovementId) {
+        print('🔔 Nuevo movimiento detectado!');
+        print('📋 ID anterior: $_lastMovementId');
+        print('📋 ID nuevo: ${latestMovement.id}');
+        print('💵 Monto: ${latestMovement.monto}');
+
         // Verificar si el usuario es el destinatario (recibió dinero)
-        if (latestMovement.dniDestino == numerocelular ||
-            latestMovement.contacto == numerocelular) {
+        if (latestMovement.dniDestino == dni) {
+          print('✅ El usuario RECIBIÓ dinero');
 
           // Mostrar notificación
           await _showTransferNotification(latestMovement);
 
+          // Ejecutar el callback si existe
+          if (_onNuevoMovimiento != null) {
+            print('📞 Ejecutando callback para actualizar saldo...');
+            _onNuevoMovimiento!();
+          }
+
           // Actualizar el último movimiento conocido
           _lastMovementId = latestMovement.id;
         } else {
+          print('📤 El usuario ENVIÓ dinero');
           // Si no es destinatario, solo actualizar el último ID
+          // pero también ejecutar el callback porque puede ser un movimiento enviado
+          if (_onNuevoMovimiento != null) {
+            print('📞 Ejecutando callback para actualizar saldo...');
+            _onNuevoMovimiento!();
+          }
           _lastMovementId = latestMovement.id;
         }
       }
     } catch (e) {
-      print('Error al verificar transferencias: $e');
+      print('❌ Error al verificar transferencias: $e');
     }
   }
 
